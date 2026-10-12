@@ -7,7 +7,7 @@
 // A tree of nodes is drawn by a rendering Engine, provided by another
 // package. The OS-independent Go version based on the image package is:
 //
-//	golang.org/x/mobile/exp/sprite/portable
+//	github.com/0magnet/mobile/exp/sprite/portable
 //
 // An Engine draws a screen starting at a root Node. The tree is walked
 // depth-first, with affine transformations applied at each level.
@@ -28,9 +28,9 @@ import (
 	"image"
 	"image/draw"
 
-	"golang.org/x/mobile/event/size"
-	"golang.org/x/mobile/exp/f32"
-	"golang.org/x/mobile/exp/sprite/clock"
+	"github.com/0magnet/mobile/event/size"
+	"github.com/0magnet/mobile/exp/f32"
+	"github.com/0magnet/mobile/exp/sprite/clock"
 )
 
 type Arranger interface {

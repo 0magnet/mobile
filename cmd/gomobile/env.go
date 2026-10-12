@@ -16,7 +16,7 @@ import (
 	"runtime"
 	"strings"
 
-	"golang.org/x/mobile/internal/sdkpath"
+	"github.com/0magnet/mobile/internal/sdkpath"
 	"golang.org/x/mod/semver"
 )
 

@@ -19,7 +19,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"golang.org/x/mobile/internal/binres"
+	"github.com/0magnet/mobile/internal/binres"
 	"golang.org/x/tools/go/packages"
 )
 
@@ -168,11 +168,11 @@ func goAndroidBuild(pkg *packages.Package, targets []targetInfo) (_ map[string]b
 
 	for _, t := range targets {
 		toolchain := ndk.Toolchain(t.arch)
-		if nmpkgs[t.arch]["golang.org/x/mobile/exp/audio/al"] {
+		if nmpkgs[t.arch]["github.com/0magnet/mobile/exp/audio/al"] {
 			dst := "lib/" + toolchain.abi + "/libopenal.so"
 			src := filepath.Join(gomobilepath, dst)
 			if _, err := os.Stat(src); err != nil {
-				return nil, errors.New("the Android requires the golang.org/x/mobile/exp/audio/al, but the OpenAL libraries was not found. Please run gomobile init with the -openal flag pointing to an OpenAL source directory.")
+				return nil, errors.New("the Android requires the github.com/0magnet/mobile/exp/audio/al, but the OpenAL libraries was not found. Please run gomobile init with the -openal flag pointing to an OpenAL source directory.")
 			}
 			if err := apkwWriteFile(dst, src); err != nil {
 				return nil, err

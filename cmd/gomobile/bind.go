@@ -16,7 +16,7 @@ import (
 	"strings"
 	"sync"
 
-	"golang.org/x/mobile/internal/sdkpath"
+	"github.com/0magnet/mobile/internal/sdkpath"
 	"golang.org/x/mod/modfile"
 	"golang.org/x/tools/go/packages"
 )
@@ -85,16 +85,16 @@ func runBind(cmd *command) error {
 	}
 
 	if !mobileModuleAvailable() {
-		fmt.Fprintln(os.Stderr, `gomobile bind requires golang.org/x/mobile in the current module, but it is not in the module dependency graph.
+		fmt.Fprintln(os.Stderr, `gomobile bind requires github.com/0magnet/mobile in the current module, but it is not in the module dependency graph.
 
 Add it with:
 
-	go get -tool golang.org/x/mobile/cmd/gobind
+	go get -tool github.com/0magnet/mobile/cmd/gobind
 
 This records a tool directive in go.mod so subsequent go mod tidy runs keep
 the dependency. See https://go.dev/doc/modules/managing-dependencies#tools
 for details and https://go.dev/issue/77183 for background.`)
-		return errors.New("missing golang.org/x/mobile dependency")
+		return errors.New("missing github.com/0magnet/mobile dependency")
 	}
 
 	if isAndroidPlatform(targets[0].platform) {
@@ -385,7 +385,7 @@ func areGoModulesUsed() (bool, error) {
 	return areGoModulesUsedResult.used, areGoModulesUsedResult.err
 }
 
-// mobileModuleAvailable reports whether golang.org/x/mobile/bind is
+// mobileModuleAvailable reports whether github.com/0magnet/mobile/bind is
 // resolvable through the current module. In GOPATH mode or when the module
 // probe fails, it returns true and lets gobind surface any error itself.
 func mobileModuleAvailable() bool {
@@ -393,6 +393,6 @@ func mobileModuleAvailable() bool {
 	if err != nil || !modulesUsed {
 		return true
 	}
-	pkgs, err := packages.Load(&packages.Config{Mode: packages.NeedName}, "golang.org/x/mobile/bind")
+	pkgs, err := packages.Load(&packages.Config{Mode: packages.NeedName}, "github.com/0magnet/mobile/bind")
 	return err == nil && len(pkgs) == 1 && pkgs[0].Name != "" && len(pkgs[0].Errors) == 0
 }

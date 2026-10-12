@@ -9,8 +9,8 @@ package glutil
 import (
 	"fmt"
 
-	"golang.org/x/mobile/exp/f32"
-	"golang.org/x/mobile/gl"
+	"github.com/0magnet/mobile/exp/f32"
+	"github.com/0magnet/mobile/gl"
 )
 
 // CreateProgram creates, compiles, and links a gl.Program.

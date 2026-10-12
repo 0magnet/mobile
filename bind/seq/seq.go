@@ -11,7 +11,7 @@
 // use this directly.
 package seq
 
-import _ "golang.org/x/mobile/internal/mobileinit"
+import _ "github.com/0magnet/mobile/internal/mobileinit"
 
 // FinalizeRef is the finalizer used on foreign objects.
 var FinalizeRef func(ref *Ref)

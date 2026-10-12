@@ -11,13 +11,13 @@ import (
 	"log"
 	"net"
 
-	"golang.org/x/mobile/app"
-	"golang.org/x/mobile/app/internal/apptest"
-	"golang.org/x/mobile/event/lifecycle"
-	"golang.org/x/mobile/event/paint"
-	"golang.org/x/mobile/event/size"
-	"golang.org/x/mobile/event/touch"
-	"golang.org/x/mobile/gl"
+	"github.com/0magnet/mobile/app"
+	"github.com/0magnet/mobile/app/internal/apptest"
+	"github.com/0magnet/mobile/event/lifecycle"
+	"github.com/0magnet/mobile/event/paint"
+	"github.com/0magnet/mobile/event/size"
+	"github.com/0magnet/mobile/event/touch"
+	"github.com/0magnet/mobile/gl"
 )
 
 func main() {

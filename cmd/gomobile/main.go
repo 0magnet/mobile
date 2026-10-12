@@ -191,7 +191,7 @@ var usageTmpl = template.Must(template.New("usage").Parse(
 
 To install:
 
-	$ go install golang.org/x/mobile/cmd/gomobile@latest
+	$ go install github.com/0magnet/mobile/cmd/gomobile@latest
 	$ gomobile init
 
 At least Go 1.16 is required.

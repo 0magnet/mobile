@@ -44,36 +44,36 @@ var tests = []struct {
 	{
 		name: "ObjC-Testpkg",
 		lang: "objc",
-		pkg:  "golang.org/x/mobile/bind/testdata/testpkg",
+		pkg:  "github.com/0magnet/mobile/bind/testdata/testpkg",
 	},
 	{
 		name: "Java-Testpkg",
 		lang: "java",
-		pkg:  "golang.org/x/mobile/bind/testdata/testpkg",
+		pkg:  "github.com/0magnet/mobile/bind/testdata/testpkg",
 	},
 	{
 		name: "Go-Testpkg",
 		lang: "go",
-		pkg:  "golang.org/x/mobile/bind/testdata/testpkg",
+		pkg:  "github.com/0magnet/mobile/bind/testdata/testpkg",
 	},
 	{
 		name:    "Java-Javapkg",
 		lang:    "java",
-		pkg:     "golang.org/x/mobile/bind/testdata/testpkg/javapkg",
+		pkg:     "github.com/0magnet/mobile/bind/testdata/testpkg/javapkg",
 		goos:    "android",
 		reverse: true,
 	},
 	{
 		name:    "Go-Javapkg",
 		lang:    "go",
-		pkg:     "golang.org/x/mobile/bind/testdata/testpkg/javapkg",
+		pkg:     "github.com/0magnet/mobile/bind/testdata/testpkg/javapkg",
 		goos:    "android",
 		reverse: true,
 	},
 	{
 		name: "Go-Cgopkg",
 		lang: "go,java,objc",
-		pkg:  "golang.org/x/mobile/bind/testdata/cgopkg",
+		pkg:  "github.com/0magnet/mobile/bind/testdata/cgopkg",
 		goos: "android",
 	},
 }
@@ -172,7 +172,7 @@ func testGobind(t *testing.T, exporter packagestest.Exporter) {
 
 	_, javapErr := exec.LookPath("javap")
 	exported := packagestest.Export(t, exporter, []packagestest.Module{{
-		Name:  "golang.org/x/mobile",
+		Name:  "github.com/0magnet/mobile",
 		Files: copyMobileTree(t, "../.."),
 	}})
 	defer exported.Cleanup()
@@ -210,7 +210,7 @@ func testGobindOverlay(t *testing.T, exporter packagestest.Exporter) {
 			},
 		},
 		{
-			Name:  "golang.org/x/mobile",
+			Name:  "github.com/0magnet/mobile",
 			Files: copyMobileTree(t, "../.."),
 		},
 	})
@@ -270,8 +270,8 @@ type Struct struct{
 			},
 		},
 		{
-			// gobind requires golang.org/x/mobile to generate code for reverse bindings.
-			Name:  "golang.org/x/mobile",
+			// gobind requires github.com/0magnet/mobile to generate code for reverse bindings.
+			Name:  "github.com/0magnet/mobile",
 			Files: copyMobileTree(t, "../.."),
 		},
 	})
@@ -300,7 +300,7 @@ func BenchmarkGobind(b *testing.B) {
 func benchmarkGobind(b *testing.B, exporter packagestest.Exporter) {
 	_, javapErr := exec.LookPath("javap")
 	exported := packagestest.Export(b, exporter, []packagestest.Module{{
-		Name:  "golang.org/x/mobile",
+		Name:  "github.com/0magnet/mobile",
 		Files: copyMobileTree(b, "../.."),
 	}})
 	defer exported.Cleanup()

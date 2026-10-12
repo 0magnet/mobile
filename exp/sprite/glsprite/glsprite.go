@@ -14,12 +14,12 @@ import (
 	"image"
 	"image/draw"
 
-	"golang.org/x/mobile/event/size"
-	"golang.org/x/mobile/exp/f32"
-	"golang.org/x/mobile/exp/gl/glutil"
-	"golang.org/x/mobile/exp/sprite"
-	"golang.org/x/mobile/exp/sprite/clock"
-	"golang.org/x/mobile/geom"
+	"github.com/0magnet/mobile/event/size"
+	"github.com/0magnet/mobile/exp/f32"
+	"github.com/0magnet/mobile/exp/gl/glutil"
+	"github.com/0magnet/mobile/exp/sprite"
+	"github.com/0magnet/mobile/exp/sprite/clock"
+	"github.com/0magnet/mobile/geom"
 )
 
 type node struct {

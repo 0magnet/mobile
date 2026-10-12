@@ -15,10 +15,10 @@ import (
 
 	xdraw "golang.org/x/image/draw"
 	"golang.org/x/image/math/f64"
-	"golang.org/x/mobile/event/size"
-	"golang.org/x/mobile/exp/f32"
-	"golang.org/x/mobile/exp/sprite"
-	"golang.org/x/mobile/exp/sprite/clock"
+	"github.com/0magnet/mobile/event/size"
+	"github.com/0magnet/mobile/exp/f32"
+	"github.com/0magnet/mobile/exp/sprite"
+	"github.com/0magnet/mobile/exp/sprite/clock"
 )
 
 // Engine builds a sprite Engine that renders onto dst.

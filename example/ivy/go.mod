@@ -1,9 +1,9 @@
-module golang.org/x/mobile/example/ivy
+module github.com/0magnet/mobile/example/ivy
 
 go 1.26.0
 
 require (
-	golang.org/x/mobile v0.0.0-20260908204917-8b95e45f8d3e
+	github.com/0magnet/mobile v0.0.0-20260908204917-8b95e45f8d3e
 	robpike.io/ivy v0.2.7
 )
 

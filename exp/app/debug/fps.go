@@ -13,9 +13,9 @@ import (
 	"image/draw"
 	"time"
 
-	"golang.org/x/mobile/event/size"
-	"golang.org/x/mobile/exp/gl/glutil"
-	"golang.org/x/mobile/geom"
+	"github.com/0magnet/mobile/event/size"
+	"github.com/0magnet/mobile/exp/gl/glutil"
+	"github.com/0magnet/mobile/geom"
 )
 
 // FPS draws a count of the frames rendered per second.

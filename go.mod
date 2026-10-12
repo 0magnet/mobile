@@ -1,4 +1,4 @@
-module golang.org/x/mobile
+module github.com/0magnet/mobile
 
 go 1.26.0
 
