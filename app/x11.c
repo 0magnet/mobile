@@ -12,6 +12,7 @@
 #include <X11/Xutil.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <poll.h>
 
 static Atom wm_delete_window;
 
@@ -197,4 +198,13 @@ swapBuffers(void) {
 		fprintf(stderr, "eglSwapBuffer failed\n");
 		exit(1);
 	}
+}
+
+// x11Wait waits until the X connection has something to read, and reports
+// whether it has. It touches only the descriptor, never Xlib, so it may run
+// on another thread while the main one draws.
+int
+x11Wait(void) {
+	struct pollfd p = { .fd = ConnectionNumber(x_dpy), .events = POLLIN };
+	return poll(&p, 1, -1) > 0;
 }

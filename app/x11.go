@@ -18,6 +18,7 @@ than screens with touch panels.
 void createWindow(void);
 void processEvents(void);
 void swapBuffers(void);
+int x11Wait(void);
 */
 import "C"
 import (
@@ -59,6 +60,18 @@ func main(f func(App)) {
 		f(theApp)
 	}()
 
+	// The X connection wakes the loop when it has events. Without this they
+	// were read only after some other wake (GL work, a publish), so an app
+	// that draws only when something changes never heard a key.
+	xready, xdrained := make(chan struct{}), make(chan struct{})
+	go func() {
+		for C.x11Wait() != 0 {
+			xready <- struct{}{}
+			<-xdrained
+		}
+	}()
+	var draining bool
+
 	// TODO: can we get the actual vsync signal?
 	ticker := time.NewTicker(time.Second / 60)
 	defer ticker.Stop()
@@ -73,11 +86,17 @@ func main(f func(App)) {
 		case <-theApp.publish:
 			C.swapBuffers()
 			tc = ticker.C
+		case <-xready:
+			draining = true
 		case <-tc:
 			tc = nil
 			theApp.publishResult <- PublishResult{}
 		}
 		C.processEvents()
+		if draining {
+			draining = false
+			xdrained <- struct{}{}
+		}
 	}
 }
 
