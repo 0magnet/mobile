@@ -136,14 +136,20 @@ createWindow(void) {
 		exit(1);
 	}
 
-	// Window size and DPI should be initialized before starting app.
+	// Window size and DPI should be initialized before starting app. A window
+	// manager configures the window as it maps it; with none, the map is all
+	// that comes, and the size is the one asked for. Wait without spinning.
 	XEvent ev;
 	while (1) {
-		if (XCheckMaskEvent(x_dpy, StructureNotifyMask, &ev) == False) {
-			continue;
-		}
+		XMaskEvent(x_dpy, StructureNotifyMask, &ev);
 		if (ev.type == ConfigureNotify) {
 			onResize(ev.xconfigure.width, ev.xconfigure.height);
+			break;
+		}
+		if (ev.type == MapNotify) {
+			XWindowAttributes wa;
+			XGetWindowAttributes(x_dpy, win, &wa);
+			onResize(wa.width, wa.height);
 			break;
 		}
 	}
