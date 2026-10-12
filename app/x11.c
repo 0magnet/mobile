@@ -10,11 +10,23 @@
 #include <GLES2/gl2.h>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
+#include <X11/Xatom.h>
+#include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <poll.h>
 
 static Atom wm_delete_window;
+
+// The clipboard (CLIPBOARD) and the primary selection (PRIMARY): what this
+// window offers while it owns them, index 0 and 1.
+static Atom a_clipboard, a_targets, a_utf8, a_prop;
+static char *sel_text[2];
+static int sel_len[2];
+
+static void answerSelection(XSelectionRequestEvent *r);
+static void dropSelection(Atom selection);
+static void readSelection(XSelectionEvent *e);
 
 static Window
 new_window(Display *x_dpy, EGLDisplay e_dpy, int w, int h, EGLContext *ctx, EGLSurface *surf) {
@@ -126,6 +138,11 @@ createWindow(void) {
 	eglBindAPI(EGL_OPENGL_ES_API);
 	win = new_window(x_dpy, e_dpy, 600, 800, &e_ctx, &e_surf);
 
+	a_clipboard = XInternAtom(x_dpy, "CLIPBOARD", False);
+	a_targets = XInternAtom(x_dpy, "TARGETS", False);
+	a_utf8 = XInternAtom(x_dpy, "UTF8_STRING", False);
+	a_prop = XInternAtom(x_dpy, "GOMOBILE_SELECTION", False);
+
 	wm_delete_window = XInternAtom(x_dpy, "WM_DELETE_WINDOW", True);
 	if (wm_delete_window != None) {
 		XSetWMProtocols(x_dpy, win, &wm_delete_window, 1);
@@ -163,10 +180,16 @@ processEvents(void) {
 		XNextEvent(x_dpy, &ev);
 		switch (ev.type) {
 		case ButtonPress:
-			onTouchBegin((float)ev.xbutton.x, (float)ev.xbutton.y);
+			onMouse((float)ev.xbutton.x, (float)ev.xbutton.y, ev.xbutton.button, ev.xbutton.state, 1);
+			if (ev.xbutton.button == Button1) {
+				onTouchBegin((float)ev.xbutton.x, (float)ev.xbutton.y);
+			}
 			break;
 		case ButtonRelease:
-			onTouchEnd((float)ev.xbutton.x, (float)ev.xbutton.y);
+			onMouse((float)ev.xbutton.x, (float)ev.xbutton.y, ev.xbutton.button, ev.xbutton.state, 2);
+			if (ev.xbutton.button == Button1) {
+				onTouchEnd((float)ev.xbutton.x, (float)ev.xbutton.y);
+			}
 			break;
 		case KeyPress:
 		case KeyRelease: {
@@ -177,7 +200,19 @@ processEvents(void) {
 			break;
 		}
 		case MotionNotify:
-			onTouchMove((float)ev.xmotion.x, (float)ev.xmotion.y);
+			onMouse((float)ev.xmotion.x, (float)ev.xmotion.y, 0, ev.xmotion.state, 0);
+			if (ev.xmotion.state & Button1Mask) {
+				onTouchMove((float)ev.xmotion.x, (float)ev.xmotion.y);
+			}
+			break;
+		case SelectionRequest:
+			answerSelection(&ev.xselectionrequest);
+			break;
+		case SelectionClear:
+			dropSelection(ev.xselectionclear.selection);
+			break;
+		case SelectionNotify:
+			readSelection(&ev.xselection);
 			break;
 		case ConfigureNotify:
 			onResize(ev.xconfigure.width, ev.xconfigure.height);
@@ -207,4 +242,84 @@ int
 x11Wait(void) {
 	struct pollfd p = { .fd = ConnectionNumber(x_dpy), .events = POLLIN };
 	return poll(&p, 1, -1) > 0;
+}
+
+static int
+selIndex(Atom selection) {
+	return selection == XA_PRIMARY ? 1 : 0;
+}
+
+// setSelection makes this window the owner of the clipboard (primary 0) or
+// the primary selection (primary 1), offering data.
+void
+setSelection(int primary, const char *data, int len) {
+	free(sel_text[primary]);
+	sel_text[primary] = malloc(len > 0 ? len : 1);
+	memcpy(sel_text[primary], data, len);
+	sel_len[primary] = len;
+	XSetSelectionOwner(x_dpy, primary ? XA_PRIMARY : a_clipboard, win, CurrentTime);
+	XFlush(x_dpy);
+}
+
+// requestSelection asks the owner of the clipboard or the primary selection
+// for it as UTF-8; the answer comes as a SelectionNotify (readSelection).
+void
+requestSelection(int primary) {
+	XConvertSelection(x_dpy, primary ? XA_PRIMARY : a_clipboard, a_utf8, a_prop, win, CurrentTime);
+	XFlush(x_dpy);
+}
+
+static void
+answerSelection(XSelectionRequestEvent *r) {
+	int i = selIndex(r->selection);
+	Atom prop = r->property != None ? r->property : r->target; // obsolete clients name none
+	XSelectionEvent ne = {0};
+	ne.type = SelectionNotify;
+	ne.requestor = r->requestor;
+	ne.selection = r->selection;
+	ne.target = r->target;
+	ne.time = r->time;
+	ne.property = None;
+	if (r->target == a_targets) {
+		Atom targets[] = { a_targets, a_utf8, XA_STRING };
+		XChangeProperty(x_dpy, r->requestor, prop, XA_ATOM, 32, PropModeReplace,
+			(unsigned char *)targets, 3);
+		ne.property = prop;
+	} else if ((r->target == a_utf8 || r->target == XA_STRING) && sel_text[i]) {
+		XChangeProperty(x_dpy, r->requestor, prop, r->target, 8, PropModeReplace,
+			(unsigned char *)sel_text[i], sel_len[i]);
+		ne.property = prop;
+	}
+	XSendEvent(x_dpy, r->requestor, False, 0, (XEvent *)&ne);
+	XFlush(x_dpy);
+}
+
+static void
+dropSelection(Atom selection) {
+	int i = selIndex(selection);
+	free(sel_text[i]);
+	sel_text[i] = NULL;
+	sel_len[i] = 0;
+}
+
+static void
+readSelection(XSelectionEvent *e) {
+	if (e->property == None) {
+		onSelection(NULL, 0, 0);
+		return;
+	}
+	Atom type;
+	int format;
+	unsigned long n, after;
+	unsigned char *data = NULL;
+	if (XGetWindowProperty(x_dpy, win, e->property, 0, 1 << 24, True, AnyPropertyType,
+			&type, &format, &n, &after, &data) != Success || format != 8) {
+		if (data) {
+			XFree(data);
+		}
+		onSelection(NULL, 0, 0); // INCR (very large) transfers are not read
+		return;
+	}
+	onSelection((char *)data, (int)n, 1);
+	XFree(data);
 }

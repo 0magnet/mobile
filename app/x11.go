@@ -19,11 +19,15 @@ void createWindow(void);
 void processEvents(void);
 void swapBuffers(void);
 int x11Wait(void);
+void setSelection(int primary, const char *data, int len);
+void requestSelection(int primary);
+#include <stdlib.h>
 */
 import "C"
 import (
 	"runtime"
 	"time"
+	"unsafe"
 
 	"github.com/0magnet/mobile/event/lifecycle"
 	"github.com/0magnet/mobile/event/paint"
@@ -86,6 +90,17 @@ func main(f func(App)) {
 		case <-theApp.publish:
 			C.swapBuffers()
 			tc = ticker.C
+		case s := <-selSet:
+			p := C.CString(s.text)
+			C.setSelection(boolInt(s.primary), p, C.int(len(s.text)))
+			C.free(unsafe.Pointer(p))
+		case r := <-selGet:
+			if selPending != nil {
+				r.reply <- selAnswer{err: errSelectionBusy}
+				break
+			}
+			selPending = r.reply
+			C.requestSelection(boolInt(r.primary))
 		case <-xready:
 			draining = true
 		case <-tc:
@@ -147,4 +162,67 @@ func onStop() {
 //export onKey
 func onKey(keysym C.ulong, state C.uint, press C.int) {
 	theApp.eventsIn <- x11Key(uint32(keysym), uint32(state), press != 0)
+}
+
+//export onMouse
+func onMouse(x, y float32, button, state C.uint, kind C.int) {
+	e, ok := x11Mouse(x, y, uint32(button), uint32(state), int(kind))
+	if ok {
+		theApp.eventsIn <- e
+	}
+}
+
+// The clipboard is asked for and set on the main thread, where every Xlib
+// call is made: the app's goroutine hands requests over through these.
+type selRequest struct {
+	primary bool
+	text    string
+	reply   chan selAnswer
+}
+
+type selAnswer struct {
+	text string
+	err  error
+}
+
+var (
+	selSet     = make(chan selRequest)
+	selGet     = make(chan selRequest)
+	selPending chan selAnswer // the read waiting for a SelectionNotify
+)
+
+//export onSelection
+func onSelection(data *C.char, n C.int, ok C.int) {
+	if selPending == nil {
+		return
+	}
+	a := selAnswer{err: errNoSelection}
+	if ok != 0 {
+		a = selAnswer{text: C.GoStringN(data, n)}
+	}
+	selPending <- a
+	selPending = nil
+}
+
+func setClipboard(primary bool, text string) error {
+	selSet <- selRequest{primary: primary, text: text}
+	return nil
+}
+
+func readClipboard(primary bool) (string, error) {
+	reply := make(chan selAnswer, 1)
+	selGet <- selRequest{primary: primary, reply: reply}
+	select {
+	case a := <-reply:
+		return a.text, a.err
+	case <-time.After(2 * time.Second):
+		return "", errSelectionTimeout
+	}
+}
+
+func boolInt(b bool) C.int {
+	if b {
+		return 1
+	}
+	return 0
 }

@@ -6,7 +6,10 @@
 
 package app
 
-import "github.com/0magnet/mobile/event/key"
+import (
+	"github.com/0magnet/mobile/event/key"
+	"github.com/0magnet/mobile/event/mouse"
+)
 
 // X11 keysyms (X11/keysymdef.h) of the keys that have a Code of their own.
 var x11Codes = map[uint32]key.Code{
@@ -21,7 +24,7 @@ var x11Codes = map[uint32]key.Code{
 	0xffe3: key.CodeLeftControl, 0xffe1: key.CodeLeftShift, 0xffe9: key.CodeLeftAlt, 0xffeb: key.CodeLeftGUI,
 	0xffe4: key.CodeRightControl, 0xffe2: key.CodeRightShift, 0xffea: key.CodeRightAlt, 0xffec: key.CodeRightGUI,
 	0xff6a: key.CodeHelp,
-	' ': key.CodeSpacebar, '-': key.CodeHyphenMinus, '=': key.CodeEqualSign, '[': key.CodeLeftSquareBracket,
+	' ':    key.CodeSpacebar, '-': key.CodeHyphenMinus, '=': key.CodeEqualSign, '[': key.CodeLeftSquareBracket,
 	']': key.CodeRightSquareBracket, '\\': key.CodeBackslash, ';': key.CodeSemicolon, '\'': key.CodeApostrophe,
 	'`': key.CodeGraveAccent, ',': key.CodeComma, '.': key.CodeFullStop, '/': key.CodeSlash,
 }
@@ -33,19 +36,7 @@ func x11Key(keysym, state uint32, press bool) key.Event {
 	if press {
 		e.Direction = key.DirPress
 	}
-	const shift, ctrl, alt, super = 1 << 0, 1 << 2, 1 << 3, 1 << 6 // ShiftMask, ControlMask, Mod1Mask, Mod4Mask
-	if state&shift != 0 {
-		e.Modifiers |= key.ModShift
-	}
-	if state&ctrl != 0 {
-		e.Modifiers |= key.ModControl
-	}
-	if state&alt != 0 {
-		e.Modifiers |= key.ModAlt
-	}
-	if state&super != 0 {
-		e.Modifiers |= key.ModMeta
-	}
+	e.Modifiers = x11Mods(state)
 
 	switch {
 	case keysym >= 0x20 && keysym <= 0x7e, keysym >= 0xa0 && keysym <= 0xff:
@@ -77,4 +68,54 @@ func x11Key(keysym, state uint32, press bool) key.Event {
 		e.Code = x11Codes[keysym]
 	}
 	return e
+}
+
+// x11Mods is the modifiers held in an X11 event's state.
+func x11Mods(state uint32) key.Modifiers {
+	const shift, ctrl, alt, super = 1 << 0, 1 << 2, 1 << 3, 1 << 6 // ShiftMask, ControlMask, Mod1Mask, Mod4Mask
+	var m key.Modifiers
+	if state&shift != 0 {
+		m |= key.ModShift
+	}
+	if state&ctrl != 0 {
+		m |= key.ModControl
+	}
+	if state&alt != 0 {
+		m |= key.ModAlt
+	}
+	if state&super != 0 {
+		m |= key.ModMeta
+	}
+	return m
+}
+
+// x11Mouse is the mouse event for an X11 button event (kind 1 press, 2
+// release) or motion (kind 0). The wheel is buttons 4 to 7, one DirStep per
+// press; its releases mean nothing and report false.
+func x11Mouse(x, y float32, button, state uint32, kind int) (mouse.Event, bool) {
+	e := mouse.Event{X: x, Y: y, Modifiers: x11Mods(state)}
+	switch kind {
+	case 1:
+		e.Direction = mouse.DirPress
+	case 2:
+		e.Direction = mouse.DirRelease
+	}
+	switch button {
+	case 0:
+	case 1:
+		e.Button = mouse.ButtonLeft
+	case 2:
+		e.Button = mouse.ButtonMiddle
+	case 3:
+		e.Button = mouse.ButtonRight
+	case 4, 5, 6, 7:
+		if kind != 1 {
+			return e, false
+		}
+		e.Button = [...]mouse.Button{mouse.ButtonWheelUp, mouse.ButtonWheelDown, mouse.ButtonWheelLeft, mouse.ButtonWheelRight}[button-4]
+		e.Direction = mouse.DirStep
+	default:
+		return e, false
+	}
+	return e, true
 }
