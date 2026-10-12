@@ -58,7 +58,8 @@ new_window(Display *x_dpy, EGLDisplay e_dpy, int w, int h, EGLContext *ctx, EGLS
 	}
 
 	attr.event_mask = StructureNotifyMask | ExposureMask |
-		ButtonPressMask | ButtonReleaseMask | ButtonMotionMask;
+		ButtonPressMask | ButtonReleaseMask | ButtonMotionMask |
+		KeyPressMask | KeyReleaseMask;
 	Window win = XCreateWindow(
 		x_dpy, root, 0, 0, w, h, 0, visInfo->depth, InputOutput,
 		visInfo->visual, CWColormap | CWEventMask, &attr);
@@ -70,6 +71,16 @@ new_window(Display *x_dpy, EGLDisplay e_dpy, int w, int h, EGLContext *ctx, EGLS
 	sizehints.flags = USSize;
 	XSetNormalHints(x_dpy, win, &sizehints);
 	XSetStandardProperties(x_dpy, win, "App", "App", None, (char **)NULL, 0, &sizehints);
+
+	// Ask for the keyboard: without the input hint some window managers
+	// never give the window focus, and no key event arrives.
+	XWMHints *wmhints = XAllocWMHints();
+	if (wmhints) {
+		wmhints->input = True;
+		wmhints->flags = InputHint;
+		XSetWMHints(x_dpy, win, wmhints);
+		XFree(wmhints);
+	}
 
 	static const EGLint ctx_attribs[] = {
 		EGL_CONTEXT_CLIENT_VERSION, 2,
@@ -150,6 +161,14 @@ processEvents(void) {
 		case ButtonRelease:
 			onTouchEnd((float)ev.xbutton.x, (float)ev.xbutton.y);
 			break;
+		case KeyPress:
+		case KeyRelease: {
+			char buf[8];
+			KeySym keysym = NoSymbol;
+			XLookupString(&ev.xkey, buf, sizeof buf, &keysym, NULL);
+			onKey((unsigned long)keysym, ev.xkey.state, ev.type == KeyPress);
+			break;
+		}
 		case MotionNotify:
 			onTouchMove((float)ev.xmotion.x, (float)ev.xmotion.y);
 			break;

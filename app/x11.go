@@ -124,3 +124,8 @@ func onStop() {
 	theApp.sendLifecycle(lifecycle.StageDead)
 	theApp.eventsIn <- stopPumping{}
 }
+
+//export onKey
+func onKey(keysym C.ulong, state C.uint, press C.int) {
+	theApp.eventsIn <- x11Key(uint32(keysym), uint32(state), press != 0)
+}
